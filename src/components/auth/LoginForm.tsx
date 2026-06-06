@@ -22,8 +22,8 @@ export default function LoginForm() {
       setLoading(false)
     } else {
       toast.success('Signed in')
-      router.push('/dashboard')
       router.refresh()
+      window.location.href = '/dashboard'
     }
   }
 
