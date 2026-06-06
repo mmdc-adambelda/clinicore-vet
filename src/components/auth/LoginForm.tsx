@@ -1,60 +1,51 @@
 'use client'
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import toast from 'react-hot-toast'
+import { useFormStatus } from 'react-dom'
+import { loginAction } from '@/app/(auth)/login/actions'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export default function LoginForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors text-sm mt-2"
+    >
+      {pending ? 'Signing in…' : 'Sign in to ClinicCore'}
+    </button>
+  )
+}
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    const supabase = createClient()
+interface LoginFormProps {
+  error?: string
+}
 
-    // Subscribe BEFORE signing in so we catch the SIGNED_IN event.
-    // onAuthStateChange fires only after @supabase/ssr has written the
-    // session to cookies — safe to navigate at that point.
-    await new Promise<void>((resolve, reject) => {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-        if (event === 'SIGNED_IN') {
-          subscription.unsubscribe()
-          resolve()
-        }
-      })
-      supabase.auth.signInWithPassword({ email, password }).then(({ error }) => {
-        if (error) {
-          subscription.unsubscribe()
-          reject(error)
-        }
-      })
-    })
-      .then(() => { window.location.href = '/dashboard' })
-      .catch((err: Error) => {
-        toast.error(err.message)
-        setLoading(false)
-      })
-  }
-
+export default function LoginForm({ error }: LoginFormProps) {
   return (
     <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-8">
       <div className="text-center mb-8">
         <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-4 bg-white">
-          <Image src="/logo.png" alt="CliniCore" width={64} height={64} className="w-full h-full object-contain" />
+          <Image src="/logo.png" alt="ClinicCore Vet" width={64} height={64} className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-2xl font-bold text-white">CliniCore EMR</h1>
-        <p className="text-slate-400 text-sm mt-1">Dental Practice Management</p>
+        <h1 className="text-2xl font-bold text-white">ClinicCore Vet</h1>
+        <p className="text-slate-400 text-sm mt-1">Veterinary Practice Management</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form action={loginAction} className="space-y-4">
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-lg px-4 py-3 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1.5">Email address</label>
           <input
-            type="email" value={email} onChange={e => setEmail(e.target.value)}
-            required autoComplete="email"
+            type="email"
+            name="email"
+            required
+            autoComplete="email"
             placeholder="doctor@clinic.com"
             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all text-sm"
           />
@@ -62,19 +53,16 @@ export default function LoginForm() {
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
           <input
-            type="password" value={password} onChange={e => setPassword(e.target.value)}
-            required autoComplete="current-password"
+            type="password"
+            name="password"
+            required
+            autoComplete="current-password"
             placeholder="••••••••"
             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2.5 text-white placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all text-sm"
           />
         </div>
 
-        <button
-          type="submit" disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors text-sm mt-2"
-        >
-          {loading ? 'Signing in…' : 'Sign in to CliniCore'}
-        </button>
+        <SubmitButton />
       </form>
 
       <p className="text-center text-sm text-slate-500 mt-6">
