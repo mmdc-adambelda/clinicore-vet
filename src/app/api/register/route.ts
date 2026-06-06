@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   const { error: staffErr } = await supabase
     .from('staff_profiles')
-    .insert({ id: userId, clinic_id: clinic.id, full_name: fullName, email, role: 'owner' })
+    .insert({ id: userId, clinic_id: clinic.id, full_name: fullName, role: 'owner' })
 
   if (staffErr) {
     // Roll back the clinic we just created
