@@ -1,6 +1,6 @@
 // src/lib/db.ts — ClinicCore Vet data access layer
 import { createClient } from '@/lib/supabase/server'
-import type { StaffProfile } from '@/types'
+import type { AuditLog, InventoryItem, Invoice, StaffProfile } from '@/types'
 
 export async function logAudit(action: string, resourceType: string, resourceId?: string) {
   const supabase = createClient()
@@ -121,6 +121,46 @@ export async function getDashboardStats() {
     today_schedule:        scheduleRes.data ?? [],
     inventory_alerts:      inventoryRes.data ?? [],
   }
+}
+
+export async function getInvoices(): Promise<{ data: Invoice[] }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [] }
+  const { data: profile } = await supabase.from('staff_profiles').select('clinic_id').eq('id', user.id).single()
+  if (!profile) return { data: [] }
+  const { data } = await supabase.from('invoices')
+    .select('*, owner:owners(full_name), pet:pets(name, species)')
+    .eq('clinic_id', profile.clinic_id)
+    .order('created_at', { ascending: false })
+  return { data: (data ?? []) as Invoice[] }
+}
+
+export async function getInventory(): Promise<{ data: InventoryItem[] }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [] }
+  const { data: profile } = await supabase.from('staff_profiles').select('clinic_id').eq('id', user.id).single()
+  if (!profile) return { data: [] }
+  const { data } = await supabase.from('inventory')
+    .select('*')
+    .eq('clinic_id', profile.clinic_id)
+    .order('name', { ascending: true })
+  return { data: (data ?? []) as InventoryItem[] }
+}
+
+export async function getAuditLogs(limit = 50): Promise<AuditLog[]> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data: profile } = await supabase.from('staff_profiles').select('clinic_id').eq('id', user.id).single()
+  if (!profile) return []
+  const { data } = await supabase.from('audit_logs')
+    .select('*')
+    .eq('clinic_id', profile.clinic_id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return (data ?? []) as AuditLog[]
 }
 
 function getEmptyStats() {
