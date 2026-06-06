@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   // Create clinic
   const { data: clinic, error: clinicErr } = await admin
     .from('clinics')
-    .insert({ name: clinicName, contact_number: phone || null })
+    .insert({ name: clinicName })
     .select()
     .single()
 

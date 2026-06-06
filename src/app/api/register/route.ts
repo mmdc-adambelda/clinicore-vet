@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   const { data: clinic, error: clinicErr } = await supabase
     .from('clinics')
-    .insert({ name: clinicName, contact_number: phone || null })
+    .insert({ name: clinicName })
     .select()
     .single()
 
