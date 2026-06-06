@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -12,20 +13,30 @@ export default function LoginForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    const supabase = createClient()
+
+    // Subscribe BEFORE signing in so we catch the SIGNED_IN event.
+    // onAuthStateChange fires only after @supabase/ssr has written the
+    // session to cookies — safe to navigate at that point.
+    await new Promise<void>((resolve, reject) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_IN') {
+          subscription.unsubscribe()
+          resolve()
+        }
+      })
+      supabase.auth.signInWithPassword({ email, password }).then(({ error }) => {
+        if (error) {
+          subscription.unsubscribe()
+          reject(error)
+        }
+      })
     })
-    const body = await res.json()
-    if (!res.ok) {
-      toast.error(body.error || 'Sign in failed')
-      setLoading(false)
-      return
-    }
-    // Cookies are now set in the browser (arrived in the fetch response).
-    // Hard-navigate so the middleware reads the fresh session.
-    window.location.href = '/dashboard'
+      .then(() => { window.location.href = '/dashboard' })
+      .catch((err: Error) => {
+        toast.error(err.message)
+        setLoading(false)
+      })
   }
 
   return (
