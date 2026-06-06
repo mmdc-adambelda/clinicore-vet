@@ -1,3 +1,4 @@
+import { createClient } from '@/lib/supabase/server'
 import { getCurrentStaff } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/layout/Sidebar'
@@ -19,8 +20,18 @@ const PAGE_TITLES: Record<string, { title: string; breadcrumb?: string }> = {
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Not logged in at all → login page
+  if (!user) redirect('/login')
+
   const staff = await getCurrentStaff()
-  if (!staff) redirect('/login')
+
+  // Logged in but no clinic profile → register to complete setup
+  // (Do NOT redirect to /login — that creates an infinite loop)
+  if (!staff) redirect('/register')
+
   const headersList = headers()
   const pathname = headersList.get('x-pathname') || '/dashboard'
   const pageInfo = PAGE_TITLES[pathname] || { title: 'ClinicCore Vet' }

@@ -12,6 +12,19 @@ interface LoginPageProps {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
+
+  if (user) {
+    // Check if they have a staff profile before sending to dashboard
+    const { data: staff } = await supabase
+      .from('staff_profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (staff) redirect('/dashboard')
+    // Authenticated but no profile → they need to complete registration
+    redirect('/register')
+  }
+
   return <LoginForm error={searchParams.error} />
 }
