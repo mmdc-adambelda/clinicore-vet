@@ -34,25 +34,25 @@ export default function RegisterForm() {
       return
     }
 
-    // 2. Create clinic
-    const { data: clinic, error: clinicErr } = await supabase
-      .from('clinics')
-      .insert({ name: form.clinic_name, contact_number: form.phone })
-      .select().single()
+    // 2. Create clinic + staff profile via server API (uses service role to bypass RLS)
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: authData.user.id,
+        email: form.email,
+        fullName: form.full_name,
+        clinicName: form.clinic_name,
+        phone: form.phone,
+      }),
+    })
 
-    if (clinicErr || !clinic) {
-      toast.error('Failed to create clinic')
+    if (!res.ok) {
+      const body = await res.json()
+      toast.error(body.error || 'Failed to create clinic')
       setLoading(false)
       return
     }
-
-    // 3. Create staff profile with admin role
-    await supabase.from('staff_profiles').insert({
-      id: authData.user.id,
-      clinic_id: clinic.id,
-      full_name: form.full_name,
-      role: 'admin',
-    })
 
     toast.success('Account created! Check your email to verify.')
     router.push('/login')
