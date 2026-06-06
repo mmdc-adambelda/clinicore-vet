@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { signInAction } from '@/app/(auth)/login/actions'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -13,13 +12,20 @@ export default function LoginForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const result = await signInAction(email, password)
-    if (result?.error) {
-      toast.error(result.error)
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const body = await res.json()
+    if (!res.ok) {
+      toast.error(body.error || 'Sign in failed')
       setLoading(false)
+      return
     }
-    // On success signInAction calls redirect('/dashboard') server-side —
-    // the auth cookie arrives in the response before the browser navigates.
+    // Cookies are now set in the browser (arrived in the fetch response).
+    // Hard-navigate so the middleware reads the fresh session.
+    window.location.href = '/dashboard'
   }
 
   return (
