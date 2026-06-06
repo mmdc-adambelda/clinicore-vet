@@ -22,14 +22,14 @@ function formatTime(iso: string) {
 export default function ClinicalIndexView({ visits }: { visits: any[] }) {
   const router = useRouter()
   const [filter, setFilter] = useState('all')
-  const filtered = filter === 'all' ? visits : filter === 'active' ? visits.filter(v => !v.status === 'completed') : visits.filter(v => v.status === 'completed')
+  const filtered = filter === 'all' ? visits : filter === 'active' ? visits.filter(v => v.status !== 'completed') : visits.filter(v => v.status === 'completed')
 
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         {['all','active','completed'].map(f => (
           <button key={f} onClick={() => setFilter(f)} className={cn('px-4 py-2 text-[12px] font-semibold rounded-lg capitalize transition-colors', filter === f ? 'text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')} style={filter === f ? { background: '#0d9488' } : {}}>
-            {f === 'all' ? `All (${visits.length})` : f === 'active' ? `Active (${visits.filter(v => !v.status === 'completed').length})` : `Completed (${visits.filter(v => v.status === 'completed').length})`}
+            {f === 'all' ? `All (${visits.length})` : f === 'active' ? `Active (${visits.filter(v => v.status !== 'completed').length})` : `Completed (${visits.filter(v => v.status === 'completed').length})`}
           </button>
         ))}
       </div>
