@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   // Create staff profile (no email column in live DB schema)
   const { error: staffErr } = await admin
     .from('staff_profiles')
-    .insert({ id: user.id, clinic_id: clinic.id, full_name: fullName, role: 'owner' })
+    .insert({ id: user.id, clinic_id: clinic.id, full_name: fullName, role: 'admin' })
 
   if (staffErr) {
     await admin.from('clinics').delete().eq('id', clinic.id)
