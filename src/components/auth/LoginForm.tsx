@@ -1,13 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { signInAction } from '@/app/(auth)/login/actions'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import Image from 'next/image'
 
 export default function LoginForm() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,16 +13,13 @@ export default function LoginForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      toast.error(error.message)
+    const result = await signInAction(email, password)
+    if (result?.error) {
+      toast.error(result.error)
       setLoading(false)
-    } else {
-      toast.success('Signed in')
-      router.refresh()
-      window.location.href = '/dashboard'
     }
+    // On success signInAction calls redirect('/dashboard') server-side —
+    // the auth cookie arrives in the response before the browser navigates.
   }
 
   return (
